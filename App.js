@@ -9,6 +9,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { styled } from "nativewind";
@@ -19,6 +20,7 @@ const StyledText = styled(Text);
 const StyledInput = styled(TextInput);
 const StyledTouchable = styled(TouchableOpacity);
 const StyledScrollView = styled(ScrollView);
+const StyledSafeAreaView = styled(SafeAreaView);
 
 // Add this new component for the create recipe form
 const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
@@ -98,135 +100,143 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
 
   return (
     <Modal visible={visible} animationType="slide">
-      <StyledScrollView className="flex-1 bg-gray-50 pt-12 px-4">
-        <StyledView className="flex-row justify-between items-center mb-6">
-          <StyledText className="text-2xl font-bold text-gray-800">
-            {initialData ? "Edit Recipe" : "Create Recipe"}
-          </StyledText>
-          <StyledTouchable onPress={onClose}>
-            <StyledText className="text-blue-500 text-lg">Cancel</StyledText>
-          </StyledTouchable>
-        </StyledView>
-
-        <StyledInput
-          className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
-          placeholder="Recipe Name"
-          value={formData.name}
-          onChangeText={(text) => setFormData({ ...formData, name: text })}
-        />
-
-        <StyledInput
-          className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
-          placeholder="Description"
-          multiline
-          numberOfLines={3}
-          value={formData.description}
-          onChangeText={(text) =>
-            setFormData({ ...formData, description: text })
-          }
-        />
-
-        <StyledView className="mb-4">
-          <StyledText className="text-gray-700 mb-2">Difficulty</StyledText>
-          <StyledView className="flex-row justify-around">
-            {["Easy", "Medium", "Hard"].map((level) => (
-              <StyledTouchable
-                key={level}
-                onPress={() => setFormData({ ...formData, difficulty: level })}
-                className={`px-4 py-2 rounded-lg ${
-                  formData.difficulty === level ? "bg-blue-500" : "bg-gray-200"
-                }`}
-              >
-                <StyledText
-                  className={
-                    formData.difficulty === level
-                      ? "text-white"
-                      : "text-gray-700"
-                  }
-                >
-                  {level}
-                </StyledText>
-              </StyledTouchable>
-            ))}
+      <StyledSafeAreaView className="flex-1 bg-gray-50">
+        <StyledScrollView className="flex-1 px-4">
+          <StyledView className="flex-row justify-between items-center mb-6">
+            <StyledText className="text-2xl font-bold text-gray-800">
+              {initialData ? "Edit Recipe" : "Create Recipe"}
+            </StyledText>
+            <StyledTouchable onPress={onClose}>
+              <StyledText className="text-blue-500 text-lg">Cancel</StyledText>
+            </StyledTouchable>
           </StyledView>
-        </StyledView>
 
-        <StyledView className="mb-4">
-          <StyledText className="text-gray-700 mb-2">Ingredients</StyledText>
-          {formData.ingredients.map((ingredient, index) => (
-            <StyledView key={index} className="flex-row items-center mb-2">
-              <StyledInput
-                className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
-                placeholder={`Ingredient ${index + 1}`}
-                value={ingredient}
-                onChangeText={(text) => updateField("ingredients", index, text)}
-              />
-              {index > 0 && (
+          <StyledInput
+            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
+            placeholder="Recipe Name"
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+          />
+
+          <StyledInput
+            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
+            placeholder="Description"
+            multiline
+            numberOfLines={3}
+            value={formData.description}
+            onChangeText={(text) =>
+              setFormData({ ...formData, description: text })
+            }
+          />
+
+          <StyledView className="mb-4">
+            <StyledText className="text-gray-700 mb-2">Difficulty</StyledText>
+            <StyledView className="flex-row justify-around">
+              {["Easy", "Medium", "Hard"].map((level) => (
                 <StyledTouchable
-                  onPress={() => {
-                    const newIngredients = formData.ingredients.filter(
-                      (_, i) => i !== index
-                    );
-                    setFormData({ ...formData, ingredients: newIngredients });
-                  }}
-                  className="ml-2 p-2"
+                  key={level}
+                  onPress={() =>
+                    setFormData({ ...formData, difficulty: level })
+                  }
+                  className={`px-4 py-2 rounded-lg ${
+                    formData.difficulty === level
+                      ? "bg-blue-500"
+                      : "bg-gray-200"
+                  }`}
                 >
-                  <FontAwesome name="trash" size={20} color="red" />
+                  <StyledText
+                    className={
+                      formData.difficulty === level
+                        ? "text-white"
+                        : "text-gray-700"
+                    }
+                  >
+                    {level}
+                  </StyledText>
                 </StyledTouchable>
-              )}
+              ))}
             </StyledView>
-          ))}
-          <StyledTouchable
-            onPress={() => addField("ingredients")}
-            className="bg-gray-200 py-2 rounded-lg items-center mt-2"
-          >
-            <StyledText className="text-gray-700">Add Ingredient</StyledText>
-          </StyledTouchable>
-        </StyledView>
+          </StyledView>
 
-        <StyledView className="mb-4">
-          <StyledText className="text-gray-700 mb-2">Steps</StyledText>
-          {formData.steps.map((step, index) => (
-            <StyledView key={index} className="flex-row items-center mb-2">
-              <StyledInput
-                className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
-                placeholder={`Step ${index + 1}`}
-                value={step}
-                onChangeText={(text) => updateField("steps", index, text)}
-                multiline
-              />
-              {index > 0 && (
-                <StyledTouchable
-                  onPress={() => {
-                    const newSteps = formData.steps.filter(
-                      (_, i) => i !== index
-                    );
-                    setFormData({ ...formData, steps: newSteps });
-                  }}
-                  className="ml-2 p-2"
-                >
-                  <FontAwesome name="trash" size={20} color="red" />
-                </StyledTouchable>
-              )}
-            </StyledView>
-          ))}
-          <StyledTouchable
-            onPress={() => addField("steps")}
-            className="bg-gray-200 py-2 rounded-lg items-center mt-2"
-          >
-            <StyledText className="text-gray-700">Add Step</StyledText>
-          </StyledTouchable>
-        </StyledView>
+          <StyledView className="mb-4">
+            <StyledText className="text-gray-700 mb-2">Ingredients</StyledText>
+            {formData.ingredients.map((ingredient, index) => (
+              <StyledView key={index} className="flex-row items-center mb-2">
+                <StyledInput
+                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
+                  placeholder={`Ingredient ${index + 1}`}
+                  value={ingredient}
+                  onChangeText={(text) =>
+                    updateField("ingredients", index, text)
+                  }
+                />
+                {index > 0 && (
+                  <StyledTouchable
+                    onPress={() => {
+                      const newIngredients = formData.ingredients.filter(
+                        (_, i) => i !== index
+                      );
+                      setFormData({ ...formData, ingredients: newIngredients });
+                    }}
+                    className="ml-2 p-2"
+                  >
+                    <FontAwesome name="trash" size={20} color="red" />
+                  </StyledTouchable>
+                )}
+              </StyledView>
+            ))}
+            <StyledTouchable
+              onPress={() => addField("ingredients")}
+              className="bg-gray-200 py-2 rounded-lg items-center mt-2"
+            >
+              <StyledText className="text-gray-700">Add Ingredient</StyledText>
+            </StyledTouchable>
+          </StyledView>
 
-        <StyledTouchable
-          onPress={handleSubmit}
-          className="bg-blue-500 py-3 rounded-lg items-center mb-8"
-        >
-          <StyledText className="text-white font-bold text-lg">
-            {initialData ? "Update Recipe" : "Create Recipe"}
-          </StyledText>
-        </StyledTouchable>
-      </StyledScrollView>
+          <StyledView className="mb-4">
+            <StyledText className="text-gray-700 mb-2">Steps</StyledText>
+            {formData.steps.map((step, index) => (
+              <StyledView key={index} className="flex-row items-center mb-2">
+                <StyledInput
+                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
+                  placeholder={`Step ${index + 1}`}
+                  value={step}
+                  onChangeText={(text) => updateField("steps", index, text)}
+                  multiline
+                />
+                {index > 0 && (
+                  <StyledTouchable
+                    onPress={() => {
+                      const newSteps = formData.steps.filter(
+                        (_, i) => i !== index
+                      );
+                      setFormData({ ...formData, steps: newSteps });
+                    }}
+                    className="ml-2 p-2"
+                  >
+                    <FontAwesome name="trash" size={20} color="red" />
+                  </StyledTouchable>
+                )}
+              </StyledView>
+            ))}
+            <StyledTouchable
+              onPress={() => addField("steps")}
+              className="bg-gray-200 py-2 rounded-lg items-center mt-2"
+            >
+              <StyledText className="text-gray-700">Add Step</StyledText>
+            </StyledTouchable>
+          </StyledView>
+
+          <StyledTouchable
+            onPress={handleSubmit}
+            className="bg-blue-500 py-3 rounded-lg items-center mb-8"
+          >
+            <StyledText className="text-white font-bold text-lg">
+              {initialData ? "Update Recipe" : "Create Recipe"}
+            </StyledText>
+          </StyledTouchable>
+        </StyledScrollView>
+      </StyledSafeAreaView>
     </Modal>
   );
 };
@@ -239,123 +249,137 @@ const DeleteConfirmationModal = ({
   recipeName,
 }) => (
   <Modal visible={visible} transparent animationType="fade">
-    <StyledView className="flex-1 justify-center items-center bg-black/50">
-      <StyledView className="bg-white rounded-xl p-6 mx-4 w-[90%] max-w-sm">
-        <StyledText className="text-xl font-bold text-gray-800 mb-4">
-          Delete Recipe
-        </StyledText>
-        <StyledText className="text-gray-600 mb-6">
-          Are you sure you want to delete "{recipeName}"? This action cannot be
-          undone.
-        </StyledText>
-        <StyledView className="flex-row justify-end space-x-4">
-          <StyledTouchable
-            onPress={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-200"
-          >
-            <StyledText className="text-gray-700 font-medium">
-              Cancel
-            </StyledText>
-          </StyledTouchable>
-          <StyledTouchable
-            onPress={onConfirm}
-            className="px-4 py-2 rounded-lg bg-red-500"
-          >
-            <StyledText className="text-white font-medium">Delete</StyledText>
-          </StyledTouchable>
+    <StyledSafeAreaView className="flex-1 bg-black/50">
+      <StyledView className="flex-1 justify-center items-center">
+        <StyledView className="bg-white rounded-xl p-6 mx-4 w-[90%] max-w-sm">
+          <StyledText className="text-xl font-bold text-gray-800 mb-4">
+            Delete Recipe
+          </StyledText>
+          <StyledText className="text-gray-600 mb-6">
+            Are you sure you want to delete "{recipeName}"? This action cannot
+            be undone.
+          </StyledText>
+          <StyledView className="flex-row justify-end space-x-4">
+            <StyledTouchable
+              onPress={onClose}
+              className="px-4 py-2 rounded-lg bg-gray-200"
+            >
+              <StyledText className="text-gray-700 font-medium">
+                Cancel
+              </StyledText>
+            </StyledTouchable>
+            <StyledTouchable
+              onPress={onConfirm}
+              className="px-4 py-2 rounded-lg bg-red-500"
+            >
+              <StyledText className="text-white font-medium">Delete</StyledText>
+            </StyledTouchable>
+          </StyledView>
         </StyledView>
       </StyledView>
-    </StyledView>
+    </StyledSafeAreaView>
   </Modal>
 );
 
 // Add this new component for recipe details
-const RecipeDetailModal = ({ visible, onClose, recipe, loading }) => {
+const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
   const [modalError, setModalError] = useState(null);
 
   if (!recipe) return null;
 
   return (
     <Modal visible={visible} animationType="slide">
-      <StyledScrollView className="flex-1 bg-gray-50 pt-12 px-4">
-        {loading ? (
-          <ActivityIndicator size="large" color="#4B5563" />
-        ) : (
-          <>
-            <StyledView className="flex-row justify-between items-center mb-6">
-              <StyledText className="text-2xl font-bold text-gray-800">
-                Recipe Details
-              </StyledText>
-              <StyledTouchable onPress={onClose}>
-                <StyledText className="text-blue-500 text-lg">Close</StyledText>
-              </StyledTouchable>
-            </StyledView>
-
-            {modalError && (
-              <StyledView className="bg-red-100 p-4 rounded-lg mb-4">
-                <StyledText className="text-red-600">{modalError}</StyledText>
-              </StyledView>
-            )}
-
-            <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-              <StyledText className="text-2xl font-bold text-gray-800 mb-2">
-                {recipe.name}
-              </StyledText>
-              <StyledText className="text-gray-600 text-base mb-4">
-                {recipe.description}
-              </StyledText>
-              <StyledView className="flex-row items-center mb-4">
-                <StyledText className="text-sm font-medium text-gray-700">
-                  Difficulty:{" "}
+      <StyledSafeAreaView className="flex-1 bg-gray-50">
+        <StyledScrollView className="flex-1 px-4">
+          {loading ? (
+            <ActivityIndicator size="large" color="#4B5563" />
+          ) : (
+            <>
+              <StyledView className="flex-row justify-between items-center mb-6">
+                <StyledText className="text-2xl font-bold text-gray-800">
+                  Recipe Details
                 </StyledText>
-                <StyledText
-                  className={`text-sm font-bold ${
-                    recipe.difficulty === "Easy"
-                      ? "text-green-600"
-                      : recipe.difficulty === "Medium"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {recipe.difficulty}
-                </StyledText>
+                <StyledView className="flex-row items-center">
+                  <StyledTouchable
+                    onPress={() => onEdit(recipe)}
+                    className="mr-4"
+                  >
+                    <FontAwesome name="edit" size={24} color="#3B82F6" />
+                  </StyledTouchable>
+                  <StyledTouchable onPress={onClose}>
+                    <StyledText className="text-blue-500 text-lg">
+                      Close
+                    </StyledText>
+                  </StyledTouchable>
+                </StyledView>
               </StyledView>
-            </StyledView>
 
-            <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-              <StyledText className="text-xl font-bold text-gray-800 mb-3">
-                Ingredients
-              </StyledText>
-              {recipe.ingredients.map((ingredient, index) => (
-                <StyledView
-                  key={index}
-                  className="flex-row items-center mb-2 pl-4"
-                >
-                  <StyledText className="text-gray-600 text-base">
-                    • {ingredient}
+              {modalError && (
+                <StyledView className="bg-red-100 p-4 rounded-lg mb-4">
+                  <StyledText className="text-red-600">{modalError}</StyledText>
+                </StyledView>
+              )}
+
+              <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                <StyledText className="text-2xl font-bold text-gray-800 mb-2">
+                  {recipe.name}
+                </StyledText>
+                <StyledText className="text-gray-600 text-base mb-4">
+                  {recipe.description}
+                </StyledText>
+                <StyledView className="flex-row items-center mb-4">
+                  <StyledText className="text-sm font-medium text-gray-700">
+                    Difficulty:{" "}
+                  </StyledText>
+                  <StyledText
+                    className={`text-sm font-bold ${
+                      recipe.difficulty === "Easy"
+                        ? "text-green-600"
+                        : recipe.difficulty === "Medium"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {recipe.difficulty}
                   </StyledText>
                 </StyledView>
-              ))}
-            </StyledView>
+              </StyledView>
 
-            <StyledView className="bg-white rounded-xl p-4 mb-8 shadow-sm">
-              <StyledText className="text-xl font-bold text-gray-800 mb-3">
-                Steps
-              </StyledText>
-              {recipe.steps.map((step, index) => (
-                <StyledView key={index} className="mb-4">
-                  <StyledText className="text-gray-800 font-bold mb-1">
-                    Step {index + 1}
-                  </StyledText>
-                  <StyledText className="text-gray-600 text-base pl-4">
-                    {step}
-                  </StyledText>
-                </StyledView>
-              ))}
-            </StyledView>
-          </>
-        )}
-      </StyledScrollView>
+              <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                <StyledText className="text-xl font-bold text-gray-800 mb-3">
+                  Ingredients
+                </StyledText>
+                {recipe.ingredients.map((ingredient, index) => (
+                  <StyledView
+                    key={index}
+                    className="flex-row items-center mb-2 pl-4"
+                  >
+                    <StyledText className="text-gray-600 text-base">
+                      • {ingredient}
+                    </StyledText>
+                  </StyledView>
+                ))}
+              </StyledView>
+
+              <StyledView className="bg-white rounded-xl p-4 mb-8 shadow-sm">
+                <StyledText className="text-xl font-bold text-gray-800 mb-3">
+                  Steps
+                </StyledText>
+                {recipe.steps.map((step, index) => (
+                  <StyledView key={index} className="mb-4">
+                    <StyledText className="text-gray-800 font-bold mb-1">
+                      Step {index + 1}
+                    </StyledText>
+                    <StyledText className="text-gray-600 text-base pl-4">
+                      {step}
+                    </StyledText>
+                  </StyledView>
+                ))}
+              </StyledView>
+            </>
+          )}
+        </StyledScrollView>
+      </StyledSafeAreaView>
     </Modal>
   );
 };
@@ -635,7 +659,7 @@ const App = () => {
     }
   };
 
-  // Update the renderRecipe function to make the recipe card clickable
+  // Update the renderRecipe function to remove the edit button and duplicate trash button
   const renderRecipe = ({ item }) => (
     <StyledTouchable
       onPress={() => fetchRecipeDetails(item._id)}
@@ -666,52 +690,44 @@ const App = () => {
             </StyledText>
           </StyledView>
         </StyledView>
-        <StyledView className="flex-row">
-          <StyledTouchable
-            onPress={(e) => {
-              e.stopPropagation(); // Prevent triggering the parent's onPress
-              setRecipeToEdit(item);
-              setIsEditModalVisible(true);
-            }}
-            className="p-2 mr-2"
-          >
-            <FontAwesome name="edit" size={24} color="gray" />
-          </StyledTouchable>
-          <StyledTouchable
-            onPress={(e) => {
-              e.stopPropagation(); // Prevent triggering the parent's onPress
-              setRecipeToDelete(item);
-              setDeleteModalVisible(true);
-            }}
-            className="p-2"
-          >
-            <FontAwesome name="trash" size={24} color="gray" />
-          </StyledTouchable>
-        </StyledView>
+        <StyledTouchable
+          onPress={(e) => {
+            e.stopPropagation(); // Prevent triggering the parent's onPress
+            setRecipeToDelete(item);
+            setDeleteModalVisible(true);
+          }}
+          className="p-2"
+        >
+          <FontAwesome name="trash" size={24} color="gray" />
+        </StyledTouchable>
       </StyledView>
     </StyledTouchable>
   );
 
   if (loading) {
     return (
-      <StyledView className="flex-1 justify-center items-center bg-gray-50">
-        <ActivityIndicator size="large" className="text-blue-500" />
-      </StyledView>
+      <StyledSafeAreaView className="flex-1 bg-gray-50">
+        <StyledView className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" className="text-blue-500" />
+        </StyledView>
+      </StyledSafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <StyledView className="flex-1 justify-center items-center bg-gray-50 p-4">
-        <StyledText className="text-red-500 text-lg text-center">
-          {error}
-        </StyledText>
-      </StyledView>
+      <StyledSafeAreaView className="flex-1 bg-gray-50">
+        <StyledView className="flex-1 justify-center items-center p-4">
+          <StyledText className="text-red-500 text-lg text-center">
+            {error}
+          </StyledText>
+        </StyledView>
+      </StyledSafeAreaView>
     );
   }
 
   return (
-    <StyledView className="flex-1 bg-gray-50 pt-12">
+    <StyledSafeAreaView className="flex-1 bg-gray-50">
       {renderHeader()}
       <FlatList
         data={recipes}
@@ -759,8 +775,13 @@ const App = () => {
         }}
         recipe={selectedRecipe}
         loading={detailLoading}
+        onEdit={(recipe) => {
+          setRecipeToEdit(recipe);
+          setIsEditModalVisible(true);
+          setIsDetailModalVisible(false);
+        }}
       />
-    </StyledView>
+    </StyledSafeAreaView>
   );
 };
 
