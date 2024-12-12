@@ -9,18 +9,23 @@ import {
   Modal,
   ScrollView,
   Alert,
+  ImageBackground,
   SafeAreaView,
+  Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { styled } from "nativewind";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+
 // Create styled components
 const StyledView = styled(View);
 const StyledText = styled(Text);
 const StyledInput = styled(TextInput);
 const StyledTouchable = styled(TouchableOpacity);
 const StyledScrollView = styled(ScrollView);
+const StyledImageBackground = styled(ImageBackground);
 const StyledSafeAreaView = styled(SafeAreaView);
+const StyledImage = styled(Image);
 
 // Add this new component for the create recipe form
 const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
@@ -33,6 +38,8 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
     steps: initialData?.steps || [""],
   });
 
+  const [formError, setFormError] = useState(null);
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -44,7 +51,9 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
         steps: initialData.steps,
       });
     }
-  }, [initialData]);
+    // Clear error when modal opens/closes
+    setFormError(null);
+  }, [initialData, visible]);
 
   const addField = (field) => {
     setFormData({
@@ -63,18 +72,41 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
   };
 
   const validateForm = () => {
+    // Reset error
+    setFormError(null);
+
+    // Check required fields based on schema
     if (!formData.name.trim()) {
-      setError("Recipe name is required");
+      setFormError("Recipe name is required");
       return false;
     }
-    if (!formData.ingredients.some((i) => i.trim())) {
-      setError("At least one ingredient is required");
+
+    if (!formData.description.trim()) {
+      setFormError("Recipe description is required");
       return false;
     }
-    if (!formData.steps.some((s) => s.trim())) {
-      setError("At least one step is required");
+
+    // Check if there's at least one non-empty ingredient
+    const validIngredients = formData.ingredients.filter((i) => i.trim());
+    if (validIngredients.length === 0) {
+      setFormError("At least one ingredient is required");
       return false;
     }
+
+    // Check if there's at least one non-empty step
+    const validSteps = formData.steps.filter((s) => s.trim());
+    if (validSteps.length === 0) {
+      setFormError("At least one step is required");
+      return false;
+    }
+
+    // Check if difficulty is valid
+    const validDifficulties = ["Easy", "Medium", "Hard"];
+    if (!validDifficulties.includes(formData.difficulty)) {
+      setFormError("Invalid difficulty level");
+      return false;
+    }
+
     return true;
   };
 
@@ -110,6 +142,15 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
               <StyledText className="text-blue-500 text-lg">Cancel</StyledText>
             </StyledTouchable>
           </StyledView>
+
+          {/* Display form error if any */}
+          {formError && (
+            <StyledView className="bg-red-100 p-4 rounded-lg mb-4">
+              <StyledText className="text-red-600 font-medium">
+                {formError}
+              </StyledText>
+            </StyledView>
+          )}
 
           <StyledInput
             className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
@@ -249,7 +290,7 @@ const DeleteConfirmationModal = ({
   recipeName,
 }) => (
   <Modal visible={visible} transparent animationType="fade">
-    <StyledSafeAreaView className="flex-1 bg-black/50">
+    <StyledView className="flex-1 bg-black/50">
       <StyledView className="flex-1 justify-center items-center">
         <StyledView className="bg-white rounded-xl p-6 mx-4 w-[90%] max-w-sm">
           <StyledText className="text-xl font-bold text-gray-800 mb-4">
@@ -277,7 +318,7 @@ const DeleteConfirmationModal = ({
           </StyledView>
         </StyledView>
       </StyledView>
-    </StyledSafeAreaView>
+    </StyledView>
   </Modal>
 );
 
@@ -449,11 +490,13 @@ const App = () => {
 
   // Add the search bar UI below the header
   const renderHeader = () => (
-    <StyledView className="border-b border-gray-200 pb-2">
+    <StyledView className="border-b border-gray-200 pb-0">
       <StyledView className="flex-row justify-between items-center px-4 mb-4">
-        <StyledText className="text-2xl font-bold text-gray-800">
-          Recipes
-        </StyledText>
+        <StyledImage
+          source={require("./assets/logo.png")}
+          className="w-28 h-12" // Adjust size as needed
+          resizeMode="contain"
+        />
         <StyledTouchable
           onPress={() => setIsCreateModalVisible(true)}
           className="bg-black px-2 py-2 rounded-lg flex-row items-center"
@@ -677,17 +720,19 @@ const App = () => {
             <StyledText className="text-sm font-medium text-gray-700">
               Difficulty:
             </StyledText>
-            <StyledText
-              className={`ml-1 text-sm font-bold ${
+            <StyledView
+              className={`ml-1 rounded-full ${
                 item.difficulty === "Easy"
-                  ? "text-green-600"
+                  ? "bg-green-600"
                   : item.difficulty === "Medium"
-                  ? "text-yellow-600"
-                  : "text-red-600"
+                  ? "bg-yellow-600"
+                  : "bg-red-600"
               }`}
             >
-              {item.difficulty}
-            </StyledText>
+              <StyledText className="text-sm font-bold text-white py-1 px-3">
+                {item.difficulty}
+              </StyledText>
+            </StyledView>
           </StyledView>
         </StyledView>
         <StyledTouchable
@@ -706,82 +751,97 @@ const App = () => {
 
   if (loading) {
     return (
-      <StyledSafeAreaView className="flex-1 bg-gray-50">
-        <StyledView className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" className="text-blue-500" />
+      <StyledImageBackground
+        source={require("./assets/background.jpg")}
+        className="flex-1"
+      >
+        <StyledView className="flex-1 bg-gray-50/90 pt-12">
+          <StyledView className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" className="text-blue-500" />
+          </StyledView>
         </StyledView>
-      </StyledSafeAreaView>
+      </StyledImageBackground>
     );
   }
 
   if (error) {
     return (
-      <StyledSafeAreaView className="flex-1 bg-gray-50">
-        <StyledView className="flex-1 justify-center items-center p-4">
-          <StyledText className="text-red-500 text-lg text-center">
-            {error}
-          </StyledText>
+      <StyledImageBackground
+        source={require("./assets/background.jpg")}
+        className="flex-1"
+      >
+        <StyledView className="flex-1 bg-gray-50/90 pt-12">
+          <StyledView className="flex-1 justify-center items-center p-4">
+            <StyledText className="text-red-500 text-lg text-center">
+              {error}
+            </StyledText>
+          </StyledView>
         </StyledView>
-      </StyledSafeAreaView>
+      </StyledImageBackground>
     );
   }
 
   return (
-    <StyledSafeAreaView className="flex-1 bg-gray-50">
-      {renderHeader()}
-      <FlatList
-        data={recipes}
-        renderItem={renderRecipe}
-        keyExtractor={(item) => item._id}
-        className="flex-1"
-        contentContainerClassName="pb-6"
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => (
-          <StyledView className="flex-1 justify-center items-center p-4">
-            <StyledText className="text-gray-500 text-lg text-center">
-              {loading ? "Loading..." : "No recipes found"}
-            </StyledText>
-          </StyledView>
-        )}
-      />
-      <RecipeFormModal
-        visible={isCreateModalVisible}
-        onClose={() => setIsCreateModalVisible(false)}
-        onSubmit={handleCreateRecipe}
-      />
-      <RecipeFormModal
-        visible={isEditModalVisible}
-        onClose={() => {
-          setIsEditModalVisible(false);
-          setRecipeToEdit(null);
-        }}
-        onSubmit={handleUpdateRecipe}
-        initialData={recipeToEdit}
-      />
-      <DeleteConfirmationModal
-        visible={deleteModalVisible}
-        onClose={() => {
-          setDeleteModalVisible(false);
-          setRecipeToDelete(null);
-        }}
-        onConfirm={() => handleDeleteRecipe(recipeToDelete?._id)}
-        recipeName={recipeToDelete?.name}
-      />
-      <RecipeDetailModal
-        visible={isDetailModalVisible}
-        onClose={() => {
-          setIsDetailModalVisible(false);
-          setSelectedRecipe(null);
-        }}
-        recipe={selectedRecipe}
-        loading={detailLoading}
-        onEdit={(recipe) => {
-          setRecipeToEdit(recipe);
-          setIsEditModalVisible(true);
-          setIsDetailModalVisible(false);
-        }}
-      />
-    </StyledSafeAreaView>
+    <StyledImageBackground
+      source={require("./assets/background.jpg")}
+      className="flex-1"
+    >
+      <StyledView className="flex-1 bg-gray-50/70 pt-12">
+        {renderHeader()}
+        <FlatList
+          data={recipes}
+          renderItem={renderRecipe}
+          keyExtractor={(item) => item._id}
+          className="flex-1"
+          contentContainerClassName="pb-6"
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={() => (
+            <StyledView className="flex-1 justify-center items-center p-4">
+              <StyledText className="text-gray-500 text-lg text-center">
+                {loading ? "Loading..." : "No recipes found"}
+              </StyledText>
+            </StyledView>
+          )}
+        />
+        <RecipeFormModal
+          visible={isCreateModalVisible}
+          onClose={() => setIsCreateModalVisible(false)}
+          onSubmit={handleCreateRecipe}
+        />
+        <RecipeFormModal
+          visible={isEditModalVisible}
+          onClose={() => {
+            setIsEditModalVisible(false);
+            setRecipeToEdit(null);
+          }}
+          onSubmit={handleUpdateRecipe}
+          initialData={recipeToEdit}
+        />
+        <DeleteConfirmationModal
+          visible={deleteModalVisible}
+          onClose={() => {
+            setDeleteModalVisible(false);
+            setRecipeToDelete(null);
+          }}
+          onConfirm={() => handleDeleteRecipe(recipeToDelete?._id)}
+          recipeName={recipeToDelete?.name}
+        />
+        <RecipeDetailModal
+          visible={isDetailModalVisible}
+          onClose={() => {
+            setIsDetailModalVisible(false);
+            setSelectedRecipe(null);
+          }}
+          recipe={selectedRecipe}
+          loading={detailLoading}
+          onEdit={(recipe) => {
+            setRecipeToEdit(recipe);
+            setIsEditModalVisible(true);
+            setIsDetailModalVisible(false);
+          }}
+        />
+      </StyledView>
+    </StyledImageBackground>
   );
 };
 
