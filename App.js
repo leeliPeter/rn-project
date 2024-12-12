@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  Alert,
   ImageBackground,
   SafeAreaView,
   Image,
@@ -24,7 +23,6 @@ import {
   JosefinSans_700Bold,
 } from "@expo-google-fonts/josefin-sans";
 
-// Create styled components
 const StyledView = styled(View);
 const StyledText = styled(Text, {
   props: {
@@ -42,7 +40,6 @@ const StyledImageBackground = styled(ImageBackground);
 const StyledSafeAreaView = styled(SafeAreaView);
 const StyledImage = styled(Image);
 
-// Add this new component for the create recipe form
 const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
   const [formData, setFormData] = useState({
     _id: initialData?._id || `recipe${Date.now()}`,
@@ -299,7 +296,6 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
   );
 };
 
-// Add a confirmation dialog component
 const DeleteConfirmationModal = ({
   visible,
   onClose,
@@ -339,7 +335,6 @@ const DeleteConfirmationModal = ({
   </Modal>
 );
 
-// Add this new component for recipe details
 const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
   const [modalError, setModalError] = useState(null);
 
@@ -513,15 +508,21 @@ const App = () => {
     }
   };
 
-  // Add the search bar UI below the header
   const renderHeader = () => (
     <StyledView className="border-b border-gray-200 pb-0">
       <StyledView className="flex-row justify-between items-center px-4 mb-4">
-        <StyledImage
-          source={require("./assets/logo.png")}
-          className="w-28 h-12" // Adjust size as needed
-          resizeMode="contain"
-        />
+        <StyledTouchable
+          onPress={() => {
+            setSearchQuery(""); // Clear search query
+            fetchRecipes(); // Reset to show all recipes
+          }}
+        >
+          <StyledImage
+            source={require("./assets/logo.png")}
+            className="w-28 h-12"
+            resizeMode="contain"
+          />
+        </StyledTouchable>
         <StyledTouchable
           onPress={() => setIsCreateModalVisible(true)}
           className="bg-black px-2 py-2 rounded-lg flex-row items-center"
@@ -694,7 +695,6 @@ const App = () => {
     }
   };
 
-  // Add function to fetch single recipe
   const fetchRecipeDetails = async (recipeId) => {
     setDetailLoading(true);
     try {
