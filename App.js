@@ -16,11 +16,26 @@ import {
 import React, { useState, useEffect } from "react";
 import { styled } from "nativewind";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import {
+  useFonts,
+  JosefinSans_400Regular,
+  JosefinSans_500Medium,
+  JosefinSans_600SemiBold,
+  JosefinSans_700Bold,
+} from "@expo-google-fonts/josefin-sans";
 
 // Create styled components
 const StyledView = styled(View);
-const StyledText = styled(Text);
-const StyledInput = styled(TextInput);
+const StyledText = styled(Text, {
+  props: {
+    className: "font-josefin",
+  },
+});
+const StyledInput = styled(TextInput, {
+  props: {
+    className: "font-josefin",
+  },
+});
 const StyledTouchable = styled(TouchableOpacity);
 const StyledScrollView = styled(ScrollView);
 const StyledImageBackground = styled(ImageBackground);
@@ -135,32 +150,34 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
       <StyledSafeAreaView className="flex-1 bg-gray-50">
         <StyledScrollView className="flex-1 px-4">
           <StyledView className="flex-row justify-between items-center mb-6">
-            <StyledText className="text-2xl font-bold text-gray-800">
+            <StyledText className="text-2xl font-josefin-bold text-gray-800">
               {initialData ? "Edit Recipe" : "Create Recipe"}
             </StyledText>
             <StyledTouchable onPress={onClose}>
-              <StyledText className="text-blue-500 text-lg">Cancel</StyledText>
+              <StyledText className="text-blue-500 text-lg font-josefin-medium">
+                Cancel
+              </StyledText>
             </StyledTouchable>
           </StyledView>
 
           {/* Display form error if any */}
           {formError && (
             <StyledView className="bg-red-100 p-4 rounded-lg mb-4">
-              <StyledText className="text-red-600 font-medium">
+              <StyledText className="text-red-600 font-josefin-medium">
                 {formError}
               </StyledText>
             </StyledView>
           )}
 
           <StyledInput
-            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
+            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4 font-josefin"
             placeholder="Recipe Name"
             value={formData.name}
             onChangeText={(text) => setFormData({ ...formData, name: text })}
           />
 
           <StyledInput
-            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4"
+            className="bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 mb-4 font-josefin"
             placeholder="Description"
             multiline
             numberOfLines={3}
@@ -186,11 +203,11 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
                   }`}
                 >
                   <StyledText
-                    className={
+                    className={`font-josefin-medium ${
                       formData.difficulty === level
                         ? "text-white"
                         : "text-gray-700"
-                    }
+                    }`}
                   >
                     {level}
                   </StyledText>
@@ -204,7 +221,7 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
             {formData.ingredients.map((ingredient, index) => (
               <StyledView key={index} className="flex-row items-center mb-2">
                 <StyledInput
-                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
+                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-josefin"
                   placeholder={`Ingredient ${index + 1}`}
                   value={ingredient}
                   onChangeText={(text) =>
@@ -239,7 +256,7 @@ const RecipeFormModal = ({ visible, onClose, onSubmit, initialData }) => {
             {formData.steps.map((step, index) => (
               <StyledView key={index} className="flex-row items-center mb-2">
                 <StyledInput
-                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
+                  className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-josefin"
                   placeholder={`Step ${index + 1}`}
                   value={step}
                   onChangeText={(text) => updateField("steps", index, text)}
@@ -330,14 +347,14 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
 
   return (
     <Modal visible={visible} animationType="slide">
-      <StyledSafeAreaView className="flex-1 bg-gray-50">
+      <StyledSafeAreaView className="flex-1 font-josefin bg-gray-50">
         <StyledScrollView className="flex-1 px-4">
           {loading ? (
             <ActivityIndicator size="large" color="#4B5563" />
           ) : (
             <>
               <StyledView className="flex-row justify-between items-center mb-6">
-                <StyledText className="text-2xl font-bold text-gray-800">
+                <StyledText className="text-2xl font-josefin-bold text-gray-800">
                   Recipe Details
                 </StyledText>
                 <StyledView className="flex-row items-center">
@@ -348,7 +365,7 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
                     <FontAwesome name="edit" size={24} color="#3B82F6" />
                   </StyledTouchable>
                   <StyledTouchable onPress={onClose}>
-                    <StyledText className="text-blue-500 text-lg">
+                    <StyledText className="text-blue-500 text-lg font-josefin-medium">
                       Close
                     </StyledText>
                   </StyledTouchable>
@@ -357,23 +374,25 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
 
               {modalError && (
                 <StyledView className="bg-red-100 p-4 rounded-lg mb-4">
-                  <StyledText className="text-red-600">{modalError}</StyledText>
+                  <StyledText className="text-red-600 font-josefin-medium">
+                    {modalError}
+                  </StyledText>
                 </StyledView>
               )}
 
               <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-                <StyledText className="text-2xl font-bold text-gray-800 mb-2">
+                <StyledText className="text-2xl font-josefin-bold text-gray-800 mb-2">
                   {recipe.name}
                 </StyledText>
-                <StyledText className="text-gray-600 text-base mb-4">
+                <StyledText className="font-josefin text-gray-600 text-base mb-4">
                   {recipe.description}
                 </StyledText>
                 <StyledView className="flex-row items-center mb-4">
-                  <StyledText className="text-sm font-medium text-gray-700">
+                  <StyledText className="text-sm font-josefin-medium text-gray-700">
                     Difficulty:{" "}
                   </StyledText>
                   <StyledText
-                    className={`text-sm font-bold ${
+                    className={`text-sm font-josefin-bold ${
                       recipe.difficulty === "Easy"
                         ? "text-green-600"
                         : recipe.difficulty === "Medium"
@@ -387,7 +406,7 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
               </StyledView>
 
               <StyledView className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-                <StyledText className="text-xl font-bold text-gray-800 mb-3">
+                <StyledText className="text-xl font-josefin-bold text-gray-800 mb-3">
                   Ingredients
                 </StyledText>
                 {recipe.ingredients.map((ingredient, index) => (
@@ -395,7 +414,7 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
                     key={index}
                     className="flex-row items-center mb-2 pl-4"
                   >
-                    <StyledText className="text-gray-600 text-base">
+                    <StyledText className="font-josefin text-gray-600 text-base">
                       • {ingredient}
                     </StyledText>
                   </StyledView>
@@ -403,15 +422,15 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
               </StyledView>
 
               <StyledView className="bg-white rounded-xl p-4 mb-8 shadow-sm">
-                <StyledText className="text-xl font-bold text-gray-800 mb-3">
+                <StyledText className="text-xl font-josefin-bold text-gray-800 mb-3">
                   Steps
                 </StyledText>
                 {recipe.steps.map((step, index) => (
                   <StyledView key={index} className="mb-4">
-                    <StyledText className="text-gray-800 font-bold mb-1">
+                    <StyledText className="text-gray-800 font-josefin-bold mb-1">
                       Step {index + 1}
                     </StyledText>
-                    <StyledText className="text-gray-600 text-base pl-4">
+                    <StyledText className="font-josefin text-gray-600 text-base pl-4">
                       {step}
                     </StyledText>
                   </StyledView>
@@ -439,6 +458,12 @@ const App = () => {
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [fontsLoaded] = useFonts({
+    JosefinSans_400Regular,
+    JosefinSans_500Medium,
+    JosefinSans_600SemiBold,
+    JosefinSans_700Bold,
+  });
 
   useEffect(() => {
     fetchRecipes();
@@ -502,7 +527,7 @@ const App = () => {
           className="bg-black px-2 py-2 rounded-lg flex-row items-center"
         >
           <Ionicons name="add" size={16} color="white" />
-          <StyledText className="text-white font-medium ml-2">
+          <StyledText className="text-white font-josefin-medium ml-2">
             add recipe
           </StyledText>
         </StyledTouchable>
@@ -520,7 +545,7 @@ const App = () => {
           className="bg-blue-500 px-4 rounded-r-lg justify-center"
           onPress={handleSearch}
         >
-          <StyledText className="text-white font-medium">
+          <StyledText className="text-white font-josefin-medium">
             {searching ? "..." : "Search"}
           </StyledText>
         </StyledTouchable>
@@ -702,7 +727,6 @@ const App = () => {
     }
   };
 
-  // Update the renderRecipe function to remove the edit button and duplicate trash button
   const renderRecipe = ({ item }) => (
     <StyledTouchable
       onPress={() => fetchRecipeDetails(item._id)}
@@ -710,10 +734,10 @@ const App = () => {
     >
       <StyledView className="flex-row justify-between items-start">
         <StyledView className="flex-1">
-          <StyledText className="text-xl font-bold text-gray-800 mb-2">
+          <StyledText className="text-xl font-josefin-bold text-gray-800 mb-2">
             {item.name}
           </StyledText>
-          <StyledText className="text-gray-600 text-base mb-3">
+          <StyledText className="font-josefin text-gray-600 text-base mb-3">
             {item.description}
           </StyledText>
           <StyledView className="flex-row items-center">
@@ -748,6 +772,14 @@ const App = () => {
       </StyledView>
     </StyledTouchable>
   );
+
+  if (!fontsLoaded) {
+    return (
+      <StyledView className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#4B5563" />
+      </StyledView>
+    );
+  }
 
   if (loading) {
     return (
