@@ -270,8 +270,7 @@ const DeleteConfirmationModal = ({
 );
 
 // Add this new component for recipe details
-const RecipeDetailModal = ({ visible, onClose, recipe }) => {
-  const [detailLoading, setDetailLoading] = useState(false);
+const RecipeDetailModal = ({ visible, onClose, recipe, loading }) => {
   const [modalError, setModalError] = useState(null);
 
   if (!recipe) return null;
@@ -279,7 +278,7 @@ const RecipeDetailModal = ({ visible, onClose, recipe }) => {
   return (
     <Modal visible={visible} animationType="slide">
       <StyledScrollView className="flex-1 bg-gray-50 pt-12 px-4">
-        {detailLoading ? (
+        {loading ? (
           <ActivityIndicator size="large" color="#4B5563" />
         ) : (
           <>
@@ -374,6 +373,7 @@ const App = () => {
   const [recipeToEdit, setRecipeToEdit] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     fetchRecipes();
@@ -758,6 +758,7 @@ const App = () => {
           setSelectedRecipe(null);
         }}
         recipe={selectedRecipe}
+        loading={detailLoading}
       />
     </StyledView>
   );
