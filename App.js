@@ -11,6 +11,7 @@ import {
   ImageBackground,
   SafeAreaView,
   Image,
+  Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { styled } from "nativewind";
@@ -22,6 +23,17 @@ import {
   JosefinSans_600SemiBold,
   JosefinSans_700Bold,
 } from "@expo-google-fonts/josefin-sans";
+import { Provider, useSelector, useDispatch } from "react-redux";
+import { store } from "./src/store";
+import {
+  fetchRecipes,
+  searchRecipes,
+  createRecipe,
+  updateRecipe,
+  deleteRecipe,
+  setSelectedRecipe,
+  setSearchQuery,
+} from "./src/store/slices/recipeSlice";
 
 const StyledView = styled(View);
 const StyledText = styled(Text, {
@@ -439,19 +451,28 @@ const RecipeDetailModal = ({ visible, onClose, recipe, loading, onEdit }) => {
   );
 };
 
+const AppWrapper = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
+
 const App = () => {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searching, setSearching] = useState(false);
+  const dispatch = useDispatch();
+  const {
+    items: recipes,
+    loading,
+    error,
+    searchQuery,
+    selectedRecipe,
+  } = useSelector((state) => state.recipes);
+
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [recipeToEdit, setRecipeToEdit] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [fontsLoaded] = useFonts({
     JosefinSans_400Regular,
@@ -461,8 +482,8 @@ const App = () => {
   });
 
   useEffect(() => {
-    fetchRecipes();
-  }, []);
+    dispatch(fetchRecipes());
+  }, [dispatch]);
 
   const baseUrl = Platform.select({
     android: "http://10.0.2.2:8000",
@@ -471,41 +492,52 @@ const App = () => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      fetchRecipes();
+      dispatch(fetchRecipes());
       return;
     }
+    dispatch(searchRecipes(searchQuery));
+  };
 
-    setSearching(true);
-    setError(null);
-
+  const handleCreateRecipe = async (recipeData) => {
     try {
-      const response = await fetch(
-        `${baseUrl}/api/recipes/search/${searchQuery}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const json = await response.json();
-      if (json.success) {
-        setRecipes(json.data);
-      } else {
-        setError("Search failed: " + (json.error || "Unknown error"));
-      }
+      await dispatch(createRecipe(recipeData)).unwrap();
+      setIsCreateModalVisible(false);
+      Alert.alert("Success", "Recipe created successfully!", [
+        { text: "OK", onPress: () => console.log("OK Pressed") },
+      ]);
     } catch (err) {
-      console.error("Search Error:", err);
-      setError("Search error: " + err.message);
-    } finally {
-      setSearching(false);
+      console.error("Create Recipe Error:", err);
+      Alert.alert("Error", "Failed to create recipe. Please try again.");
     }
+  };
+
+  const handleUpdateRecipe = async (recipeData) => {
+    try {
+      await dispatch(updateRecipe(recipeData)).unwrap();
+      setIsEditModalVisible(false);
+      setRecipeToEdit(null);
+    } catch (err) {
+      console.error("Update Recipe Error:", err);
+    }
+  };
+
+  const handleDeleteRecipe = async (recipeId) => {
+    try {
+      await dispatch(deleteRecipe(recipeId)).unwrap();
+      setDeleteModalVisible(false);
+      setRecipeToDelete(null);
+      Alert.alert("Success", "Recipe deleted successfully!", [
+        { text: "OK", onPress: () => console.log("OK Pressed") },
+      ]);
+    } catch (err) {
+      console.error("Delete Recipe Error:", err);
+      Alert.alert("Error", "Failed to delete recipe. Please try again.");
+    }
+  };
+
+  const handleRecipeSelect = (recipe) => {
+    dispatch(setSelectedRecipe(recipe));
+    setIsDetailModalVisible(true);
   };
 
   const renderHeader = () => (
@@ -513,8 +545,8 @@ const App = () => {
       <StyledView className="flex-row justify-between items-center px-4 mb-4">
         <StyledTouchable
           onPress={() => {
-            setSearchQuery(""); // Clear search query
-            fetchRecipes(); // Reset to show all recipes
+            dispatch(setSearchQuery("")); // Clear search query
+            dispatch(fetchRecipes()); // Reset to show all recipes
           }}
         >
           <StyledImage
@@ -538,7 +570,7 @@ const App = () => {
           className="flex-1 bg-white px-4 py-2 rounded-l-lg border border-gray-300 text-gray-700"
           placeholder="Search recipes..."
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={(text) => dispatch(setSearchQuery(text))}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
@@ -547,189 +579,16 @@ const App = () => {
           onPress={handleSearch}
         >
           <StyledText className="text-white font-josefin-medium">
-            {searching ? "..." : "Search"}
+            {loading ? "..." : "Search"}
           </StyledText>
         </StyledTouchable>
       </StyledView>
     </StyledView>
   );
 
-  const fetchRecipes = async () => {
-    try {
-      const baseUrl = Platform.select({
-        android: "http://10.0.2.2:8000",
-        ios: "http://localhost:8000",
-      });
-
-      console.log("Fetching from:", `${baseUrl}/api/recipes`);
-
-      const response = await fetch(`${baseUrl}/api/recipes`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
-      let json;
-      try {
-        json = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("JSON Parse Error:", parseError);
-        setError(`Parse error: ${parseError.message}`);
-        return;
-      }
-
-      if (json.success) {
-        console.log("Recipes fetched:", json.data.length);
-        setRecipes(json.data);
-      } else {
-        console.error("API Error:", json);
-        setError("Failed to fetch recipes: " + (json.error || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Network Error:", err);
-      setError("Network error: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateRecipe = async (recipeData) => {
-    try {
-      const response = await fetch(`${baseUrl}/api/recipes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(recipeData),
-      });
-
-      const json = await response.json();
-      if (json.success) {
-        fetchRecipes(); // Refresh the recipe list
-        setIsCreateModalVisible(false);
-      } else {
-        setError("Failed to create recipe: " + (json.error || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Create Recipe Error:", err);
-      setError("Failed to create recipe: " + err.message);
-    }
-  };
-
-  const handleDeleteRecipe = async (recipeId) => {
-    try {
-      const response = await fetch(`${baseUrl}/api/recipes/${recipeId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const json = await response.json();
-      if (json.success) {
-        fetchRecipes(); // Refresh the list
-      } else {
-        setError("Failed to delete recipe: " + (json.error || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Delete Recipe Error:", err);
-      setError("Failed to delete recipe: " + err.message);
-    } finally {
-      setDeleteModalVisible(false);
-      setRecipeToDelete(null);
-    }
-  };
-
-  const handleUpdateRecipe = async (recipeData) => {
-    try {
-      // Log the request details for debugging
-      console.log("Updating recipe with ID:", recipeData._id);
-      console.log("Update data:", recipeData);
-
-      const response = await fetch(`${baseUrl}/api/recipes/${recipeData._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json", // Add Accept header
-        },
-        body: JSON.stringify({
-          name: recipeData.name,
-          description: recipeData.description,
-          difficulty: recipeData.difficulty,
-          ingredients: recipeData.ingredients,
-          steps: recipeData.steps,
-        }), // Don't send _id in the body
-      });
-
-      // Log the response for debugging
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
-      let json;
-      try {
-        json = JSON.parse(responseText);
-      } catch (err) {
-        console.error("Failed to parse response:", err);
-        throw new Error("Invalid response format");
-      }
-
-      if (json.success) {
-        await fetchRecipes(); // Refresh the recipe list
-        setIsEditModalVisible(false);
-        setRecipeToEdit(null);
-      } else {
-        throw new Error(json.error || "Unknown error");
-      }
-    } catch (err) {
-      console.error("Update Recipe Error:", err);
-      setError("Failed to update recipe: " + err.message);
-    }
-  };
-
-  const fetchRecipeDetails = async (recipeId) => {
-    setDetailLoading(true);
-    try {
-      const response = await fetch(`${baseUrl}/api/recipes/${recipeId}`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const json = await response.json();
-      if (json.success) {
-        setSelectedRecipe(json.data);
-        setIsDetailModalVisible(true);
-      } else {
-        setError(
-          "Failed to fetch recipe details: " + (json.error || "Unknown error")
-        );
-      }
-    } catch (err) {
-      console.error("Fetch Recipe Details Error:", err);
-      setError("Failed to fetch recipe details: " + err.message);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
   const renderRecipe = ({ item }) => (
     <StyledTouchable
-      onPress={() => fetchRecipeDetails(item._id)}
+      onPress={() => handleRecipeSelect(item)}
       className="bg-white mx-4 my-2 p-4 rounded-xl shadow-lg"
     >
       <StyledView className="flex-row justify-between items-start">
@@ -862,7 +721,7 @@ const App = () => {
           visible={isDetailModalVisible}
           onClose={() => {
             setIsDetailModalVisible(false);
-            setSelectedRecipe(null);
+            dispatch(setSelectedRecipe(null));
           }}
           recipe={selectedRecipe}
           loading={detailLoading}
@@ -877,4 +736,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default AppWrapper;
