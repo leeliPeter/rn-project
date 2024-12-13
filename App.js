@@ -34,6 +34,11 @@ import {
   setSelectedRecipe,
   setSearchQuery,
 } from "./src/store/slices/recipeSlice";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import SettingsScreen from "./src/screens/SettingsScreen";
+
+const Stack = createStackNavigator();
 
 const StyledView = styled(View);
 const StyledText = styled(Text, {
@@ -457,7 +462,7 @@ const AppWrapper = () => (
   </Provider>
 );
 
-const App = () => {
+const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const {
     items: recipes,
@@ -481,6 +486,9 @@ const App = () => {
     JosefinSans_700Bold,
   });
 
+  const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+  const showAlerts = useSelector((state) => state.theme.showAlerts);
+
   useEffect(() => {
     dispatch(fetchRecipes());
   }, [dispatch]);
@@ -502,12 +510,16 @@ const App = () => {
     try {
       await dispatch(createRecipe(recipeData)).unwrap();
       setIsCreateModalVisible(false);
-      Alert.alert("Success", "Recipe created successfully!", [
-        { text: "OK", onPress: () => console.log("OK Pressed") },
-      ]);
+      if (showAlerts) {
+        Alert.alert("Success", "Recipe created successfully!", [
+          { text: "OK", onPress: () => console.log("OK Pressed") },
+        ]);
+      }
     } catch (err) {
       console.error("Create Recipe Error:", err);
-      Alert.alert("Error", "Failed to create recipe. Please try again.");
+      if (showAlerts) {
+        Alert.alert("Error", "Failed to create recipe. Please try again.");
+      }
     }
   };
 
@@ -526,12 +538,16 @@ const App = () => {
       await dispatch(deleteRecipe(recipeId)).unwrap();
       setDeleteModalVisible(false);
       setRecipeToDelete(null);
-      Alert.alert("Success", "Recipe deleted successfully!", [
-        { text: "OK", onPress: () => console.log("OK Pressed") },
-      ]);
+      if (showAlerts) {
+        Alert.alert("Success", "Recipe deleted successfully!", [
+          { text: "OK", onPress: () => console.log("OK Pressed") },
+        ]);
+      }
     } catch (err) {
       console.error("Delete Recipe Error:", err);
-      Alert.alert("Error", "Failed to delete recipe. Please try again.");
+      if (showAlerts) {
+        Alert.alert("Error", "Failed to delete recipe. Please try again.");
+      }
     }
   };
 
@@ -557,12 +573,18 @@ const App = () => {
         </StyledTouchable>
         <StyledTouchable
           onPress={() => setIsCreateModalVisible(true)}
-          className="bg-black px-2 py-2 rounded-lg flex-row items-center"
+          className="bg-black ml-24 px-2 py-2 rounded-lg flex-row items-center"
         >
           <Ionicons name="add" size={16} color="white" />
           <StyledText className="text-white font-josefin-medium ml-2">
             add recipe
           </StyledText>
+        </StyledTouchable>
+        <StyledTouchable
+          onPress={() => navigation.navigate("Settings")}
+          className="ml-2 p-2"
+        >
+          <Ionicons name="settings-outline" size={24} color="#4B5563" />
         </StyledTouchable>
       </StyledView>
       <StyledView className="flex-row px-4 mb-2">
@@ -677,7 +699,11 @@ const App = () => {
       source={require("./assets/background.jpg")}
       className="flex-1"
     >
-      <StyledView className="flex-1 bg-gray-50/70 pt-12">
+      <StyledView
+        className={`flex-1 ${
+          isDarkMode ? "bg-gray-900/90" : "bg-gray-50/70"
+        } pt-12`}
+      >
         {renderHeader()}
         <FlatList
           data={recipes}
@@ -733,6 +759,27 @@ const App = () => {
         />
       </StyledView>
     </StyledImageBackground>
+  );
+};
+
+const App = () => {
+  return (
+    <Provider store={store}>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
 };
 
