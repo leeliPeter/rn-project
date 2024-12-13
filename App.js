@@ -37,6 +37,9 @@ import {
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import SettingsScreen from "./src/screens/SettingsScreen";
+import CreateRecipeScreen from "./src/screens/CreateRecipeScreen";
+import EditRecipeScreen from "./src/screens/EditRecipeScreen";
+import RecipeDetailScreen from "./src/screens/RecipeDetailScreen";
 
 const Stack = createStackNavigator();
 
@@ -775,6 +778,21 @@ const App = () => {
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CreateRecipe"
+            component={CreateRecipeScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="EditRecipe"
+            component={EditRecipeScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RecipeDetail"
+            component={RecipeDetailScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>
