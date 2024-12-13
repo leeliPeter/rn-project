@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "lab5",
-    "slug": "lab5",
+    "name": "Your Recipe App",
+    "slug": "your-recipe-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,8 +11,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.recipeapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,9 +24,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-font"
-    ]
+    }
   }
 }

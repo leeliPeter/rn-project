@@ -10,18 +10,12 @@ import {
   Animated,
   Platform,
 } from "react-native";
-import ProgressBar from "@react-native-community/progress-bar-android";
-import ProgressView from "@react-native-community/progress-view";
 import { styled } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { createRecipe } from "../store/slices/recipeSlice";
 import { fadeIn } from "../utils/animations";
-
-const Progress = Platform.select({
-  ios: ProgressView,
-  android: ProgressBar,
-});
+import ProgressBar from "../components/ProgressBar";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -52,8 +46,8 @@ const CreateRecipeScreen = ({ navigation }) => {
       .map(() => new Animated.Value(0))
   ).current;
 
-  const [createProgress, setCreateProgress] = useState(0);
-  const [isCreating, setIsCreating] = useState(false);
+  const [progress] = useState(new Animated.Value(0));
+  const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     // Stagger animation for form fields
@@ -125,40 +119,40 @@ const CreateRecipeScreen = ({ navigation }) => {
   const handleSubmit = async () => {
     if (validateForm()) {
       try {
-        setIsCreating(true);
-        setCreateProgress(0);
-        const startTime = Date.now();
-
-        const interval = setInterval(() => {
-          setCreateProgress((prev) => {
-            const elapsedTime = Date.now() - startTime;
-            const targetProgress = Math.min(elapsedTime / 2000, 0.95);
-            return targetProgress;
-          });
-        }, 16);
-
         const cleanedData = {
           ...formData,
           ingredients: formData.ingredients.filter((item) => item.trim()),
           steps: formData.steps.filter((item) => item.trim()),
         };
 
+        // Create recipe first
         await dispatch(createRecipe(cleanedData)).unwrap();
-        setCreateProgress(1);
-        await new Promise((resolve) => setTimeout(resolve, 500));
 
-        if (showAlerts) {
-          Alert.alert("Success", "Recipe created successfully!");
-        }
-        navigation.goBack();
+        // Then show progress bar
+        setShowProgress(true);
+        progress.setValue(0);
+
+        // Start progress animation and wait for it to complete
+        await new Promise((resolve) => {
+          Animated.timing(progress, {
+            toValue: 1,
+            duration: 2000, // 2 seconds
+            useNativeDriver: false,
+          }).start(async () => {
+            // Wait additional time to show 100%
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            setShowProgress(false);
+            // Only navigate back after everything is complete
+            navigation.goBack();
+            resolve();
+          });
+        });
       } catch (err) {
+        setShowProgress(false);
         console.error("Create Recipe Error:", err);
         if (showAlerts) {
           Alert.alert("Error", "Failed to create recipe. Please try again.");
         }
-      } finally {
-        setIsCreating(false);
-        setCreateProgress(0);
       }
     }
   };
@@ -167,34 +161,28 @@ const CreateRecipeScreen = ({ navigation }) => {
     <StyledSafeAreaView
       className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}
     >
-      {isCreating && (
+      {showProgress && (
         <StyledView
-          className="absolute top-0 left-0 right-0 z-50"
-          style={{ elevation: 1 }}
+          className="absolute inset-0 bg-black/50 z-[999] flex items-center justify-center"
+          style={{ elevation: 999 }} // for Android
         >
-          <StyledView className="flex-row justify-between px-4 py-1">
-            <StyledText
-              className={`text-sm ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Creating Recipe
+          <StyledView className="bg-white p-4 rounded-lg w-3/4">
+            <StyledText className="text-center mb-2 text-gray-700 font-medium">
+              Creating Recipe... {Math.round(progress.__getValue() * 100)}%
             </StyledText>
-            <StyledText
-              className={`text-sm ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              {Math.round(createProgress * 100)}%
-            </StyledText>
+            <StyledView className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <Animated.View
+                style={{
+                  width: progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0%", "100%"],
+                  }),
+                  height: 8,
+                  backgroundColor: "#3B82F6",
+                }}
+              />
+            </StyledView>
           </StyledView>
-          <Progress
-            progress={createProgress}
-            width={null}
-            color="#3B82F6"
-            style={{ height: 3 }}
-            {...(Platform.OS === "ios" ? { progressTintColor: "#3B82F6" } : {})}
-          />
         </StyledView>
       )}
 
@@ -402,7 +390,7 @@ const CreateRecipeScreen = ({ navigation }) => {
 
         <StyledTouchable
           onPress={handleSubmit}
-          className="bg-blue-500 py-3 rounded-lg items-center mb-8"
+          className="bg-blue-500 py-3 rounded-lg items-center mb-8 mx-4"
         >
           <StyledText className="text-white font-bold text-lg">
             Create Recipe

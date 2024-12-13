@@ -3,7 +3,6 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
-  Platform,
   TextInput,
   TouchableOpacity,
   Modal,
@@ -12,6 +11,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  Animated,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { styled } from "nativewind";
@@ -40,6 +40,7 @@ import SettingsScreen from "./src/screens/SettingsScreen";
 import CreateRecipeScreen from "./src/screens/CreateRecipeScreen";
 import EditRecipeScreen from "./src/screens/EditRecipeScreen";
 import RecipeDetailScreen from "./src/screens/RecipeDetailScreen";
+import ProgressBar from "./src/components/ProgressBar";
 
 const Stack = createStackNavigator();
 
@@ -496,11 +497,6 @@ const HomeScreen = ({ navigation }) => {
     dispatch(fetchRecipes());
   }, [dispatch]);
 
-  const baseUrl = Platform.select({
-    android: "http://10.0.2.2:8000",
-    ios: "http://localhost:8000",
-  });
-
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       dispatch(fetchRecipes());
@@ -766,9 +762,48 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const App = () => {
+  const [progress] = useState(new Animated.Value(0));
+  const [showProgress, setShowProgress] = useState(true);
+
+  useEffect(() => {
+    // Reset progress and start animation
+    progress.setValue(0);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 2000, // 2 seconds
+      useNativeDriver: false,
+    }).start(() => {
+      // Hide progress bar after completion
+      setTimeout(() => {
+        setShowProgress(false);
+      }, 500);
+    });
+  }, []);
+
   return (
     <Provider store={store}>
       <NavigationContainer>
+        {showProgress && (
+          <StyledView className="absolute top-12 left-0 right-0 z-50 px-4">
+            <StyledView className="bg-white p-4 rounded-lg">
+              <StyledText className="text-center mb-2 text-gray-700 font-medium">
+                Loading... {Math.round(progress.__getValue() * 100)}%
+              </StyledText>
+              <StyledView className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <Animated.View
+                  style={{
+                    width: progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0%", "100%"],
+                    }),
+                    height: 8,
+                    backgroundColor: "#3B82F6",
+                  }}
+                />
+              </StyledView>
+            </StyledView>
+          </StyledView>
+        )}
         <Stack.Navigator>
           <Stack.Screen
             name="Home"
