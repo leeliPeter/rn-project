@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,21 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Animated,
+  Platform,
 } from "react-native";
+import ProgressBar from "@react-native-community/progress-bar-android";
+import ProgressView from "@react-native-community/progress-view";
 import { styled } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { createRecipe } from "../store/slices/recipeSlice";
+import { fadeIn } from "../utils/animations";
+
+const Progress = Platform.select({
+  ios: ProgressView,
+  android: ProgressBar,
+});
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -35,6 +45,32 @@ const CreateRecipeScreen = ({ navigation }) => {
   });
 
   const [formError, setFormError] = useState(null);
+
+  const fadeAnims = useRef(
+    Array(5)
+      .fill(0)
+      .map(() => new Animated.Value(0))
+  ).current;
+
+  const [createProgress, setCreateProgress] = useState(0);
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    // Stagger animation for form fields
+    Animated.stagger(
+      100,
+      fadeAnims.map((anim) =>
+        Animated.sequence([
+          fadeIn(anim),
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    ).start();
+  }, []);
 
   const addField = (field) => {
     setFormData({
@@ -89,12 +125,28 @@ const CreateRecipeScreen = ({ navigation }) => {
   const handleSubmit = async () => {
     if (validateForm()) {
       try {
+        setIsCreating(true);
+        setCreateProgress(0);
+        const startTime = Date.now();
+
+        const interval = setInterval(() => {
+          setCreateProgress((prev) => {
+            const elapsedTime = Date.now() - startTime;
+            const targetProgress = Math.min(elapsedTime / 2000, 0.95);
+            return targetProgress;
+          });
+        }, 16);
+
         const cleanedData = {
           ...formData,
           ingredients: formData.ingredients.filter((item) => item.trim()),
           steps: formData.steps.filter((item) => item.trim()),
         };
+
         await dispatch(createRecipe(cleanedData)).unwrap();
+        setCreateProgress(1);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         if (showAlerts) {
           Alert.alert("Success", "Recipe created successfully!");
         }
@@ -104,6 +156,9 @@ const CreateRecipeScreen = ({ navigation }) => {
         if (showAlerts) {
           Alert.alert("Error", "Failed to create recipe. Please try again.");
         }
+      } finally {
+        setIsCreating(false);
+        setCreateProgress(0);
       }
     }
   };
@@ -112,6 +167,37 @@ const CreateRecipeScreen = ({ navigation }) => {
     <StyledSafeAreaView
       className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}
     >
+      {isCreating && (
+        <StyledView
+          className="absolute top-0 left-0 right-0 z-50"
+          style={{ elevation: 1 }}
+        >
+          <StyledView className="flex-row justify-between px-4 py-1">
+            <StyledText
+              className={`text-sm ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Creating Recipe
+            </StyledText>
+            <StyledText
+              className={`text-sm ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              {Math.round(createProgress * 100)}%
+            </StyledText>
+          </StyledView>
+          <Progress
+            progress={createProgress}
+            width={null}
+            color="#3B82F6"
+            style={{ height: 3 }}
+            {...(Platform.OS === "ios" ? { progressTintColor: "#3B82F6" } : {})}
+          />
+        </StyledView>
+      )}
+
       <StyledView className="flex-row justify-between items-center p-4 border-b border-gray-200">
         <StyledText
           className={`text-2xl font-josefin-bold ${
@@ -138,161 +224,181 @@ const CreateRecipeScreen = ({ navigation }) => {
           </StyledView>
         )}
 
-        <StyledInput
-          className={`px-4 py-2 rounded-lg border border-gray-300 mb-4 font-josefin ${
-            isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-700"
-          }`}
-          placeholder="Recipe Name"
-          placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-          value={formData.name}
-          onChangeText={(text) => setFormData({ ...formData, name: text })}
-        />
+        <Animated.View style={{ opacity: fadeAnims[0] }}>
+          <StyledInput
+            className={`px-4 py-2 rounded-lg border border-gray-300 mb-4 font-josefin ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-700"
+            }`}
+            placeholder="Recipe Name"
+            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+          />
+        </Animated.View>
 
-        <StyledInput
-          className={`px-4 py-2 rounded-lg border border-gray-300 mb-4 font-josefin ${
-            isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-700"
-          }`}
-          placeholder="Description"
-          placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-          multiline
-          numberOfLines={3}
-          value={formData.description}
-          onChangeText={(text) =>
-            setFormData({ ...formData, description: text })
-          }
-        />
+        <Animated.View style={{ opacity: fadeAnims[1] }}>
+          <StyledInput
+            className={`px-4 py-2 rounded-lg border border-gray-300 mb-4 font-josefin ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-700"
+            }`}
+            placeholder="Description"
+            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+            multiline
+            numberOfLines={3}
+            value={formData.description}
+            onChangeText={(text) =>
+              setFormData({ ...formData, description: text })
+            }
+          />
+        </Animated.View>
 
-        <StyledView className="mb-4">
-          <StyledText
-            className={`mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-          >
-            Difficulty
-          </StyledText>
-          <StyledView className="flex-row justify-around">
-            {["Easy", "Medium", "Hard"].map((level) => (
-              <StyledTouchable
-                key={level}
-                onPress={() => setFormData({ ...formData, difficulty: level })}
-                className={`px-4 py-2 rounded-lg ${
-                  formData.difficulty === level
-                    ? "bg-blue-500"
-                    : isDarkMode
-                    ? "bg-gray-700"
-                    : "bg-gray-200"
-                }`}
-              >
-                <StyledText
-                  className={`font-josefin-medium ${
+        <Animated.View style={{ opacity: fadeAnims[2] }}>
+          <StyledView className="mb-4">
+            <StyledText
+              className={`mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
+              Difficulty
+            </StyledText>
+            <StyledView className="flex-row justify-around">
+              {["Easy", "Medium", "Hard"].map((level) => (
+                <StyledTouchable
+                  key={level}
+                  onPress={() =>
+                    setFormData({ ...formData, difficulty: level })
+                  }
+                  className={`px-4 py-2 rounded-lg ${
                     formData.difficulty === level
-                      ? "text-white"
+                      ? "bg-blue-500"
                       : isDarkMode
-                      ? "text-gray-300"
-                      : "text-gray-700"
+                      ? "bg-gray-700"
+                      : "bg-gray-200"
                   }`}
                 >
-                  {level}
-                </StyledText>
-              </StyledTouchable>
-            ))}
+                  <StyledText
+                    className={`font-josefin-medium ${
+                      formData.difficulty === level
+                        ? "text-white"
+                        : isDarkMode
+                        ? "text-gray-300"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {level}
+                  </StyledText>
+                </StyledTouchable>
+              ))}
+            </StyledView>
           </StyledView>
-        </StyledView>
+        </Animated.View>
 
-        <StyledView className="mb-4">
-          <StyledText
-            className={`mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-          >
-            Ingredients
-          </StyledText>
-          {formData.ingredients.map((ingredient, index) => (
-            <StyledView key={index} className="flex-row items-center mb-2">
-              <StyledInput
-                className={`flex-1 px-4 py-2 rounded-lg border border-gray-300 font-josefin ${
-                  isDarkMode
-                    ? "bg-gray-800 text-white"
-                    : "bg-white text-gray-700"
-                }`}
-                placeholder={`Ingredient ${index + 1}`}
-                placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-                value={ingredient}
-                onChangeText={(text) => updateField("ingredients", index, text)}
-              />
-              {index > 0 && (
-                <StyledTouchable
-                  onPress={() => {
-                    const newIngredients = formData.ingredients.filter(
-                      (_, i) => i !== index
-                    );
-                    setFormData({ ...formData, ingredients: newIngredients });
-                  }}
-                  className="ml-2 p-2"
-                >
-                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
-                </StyledTouchable>
-              )}
-            </StyledView>
-          ))}
-          <StyledTouchable
-            onPress={() => addField("ingredients")}
-            className={`py-2 rounded-lg items-center mt-2 ${
-              isDarkMode ? "bg-gray-700" : "bg-gray-200"
-            }`}
-          >
+        <Animated.View style={{ opacity: fadeAnims[3] }}>
+          <StyledView className="mb-4">
             <StyledText
-              className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+              className={`mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}
             >
-              Add Ingredient
+              Ingredients
             </StyledText>
-          </StyledTouchable>
-        </StyledView>
+            {formData.ingredients.map((ingredient, index) => (
+              <StyledView key={index} className="flex-row items-center mb-2">
+                <StyledInput
+                  className={`flex-1 px-4 py-2 rounded-lg border border-gray-300 font-josefin ${
+                    isDarkMode
+                      ? "bg-gray-800 text-white"
+                      : "bg-white text-gray-700"
+                  }`}
+                  placeholder={`Ingredient ${index + 1}`}
+                  placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+                  value={ingredient}
+                  onChangeText={(text) =>
+                    updateField("ingredients", index, text)
+                  }
+                />
+                {index > 0 && (
+                  <StyledTouchable
+                    onPress={() => {
+                      const newIngredients = formData.ingredients.filter(
+                        (_, i) => i !== index
+                      );
+                      setFormData({ ...formData, ingredients: newIngredients });
+                    }}
+                    className="ml-2 p-2"
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                  </StyledTouchable>
+                )}
+              </StyledView>
+            ))}
+            <StyledTouchable
+              onPress={() => addField("ingredients")}
+              className={`py-2 rounded-lg items-center mt-2 ${
+                isDarkMode ? "bg-gray-700" : "bg-gray-200"
+              }`}
+            >
+              <StyledText
+                className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+              >
+                Add Ingredient
+              </StyledText>
+            </StyledTouchable>
+          </StyledView>
+        </Animated.View>
 
-        <StyledView className="mb-4">
-          <StyledText
-            className={`mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-          >
-            Steps
-          </StyledText>
-          {formData.steps.map((step, index) => (
-            <StyledView key={index} className="flex-row items-center mb-2">
-              <StyledInput
-                className={`flex-1 px-4 py-2 rounded-lg border border-gray-300 font-josefin ${
-                  isDarkMode
-                    ? "bg-gray-800 text-white"
-                    : "bg-white text-gray-700"
-                }`}
-                placeholder={`Step ${index + 1}`}
-                placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-                value={step}
-                onChangeText={(text) => updateField("steps", index, text)}
-                multiline
-              />
-              {index > 0 && (
-                <StyledTouchable
-                  onPress={() => {
-                    const newSteps = formData.steps.filter(
-                      (_, i) => i !== index
-                    );
-                    setFormData({ ...formData, steps: newSteps });
-                  }}
-                  className="ml-2 p-2"
-                >
-                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
-                </StyledTouchable>
-              )}
-            </StyledView>
-          ))}
-          <StyledTouchable
-            onPress={() => addField("steps")}
-            className={`py-2 rounded-lg items-center mt-2 ${
-              isDarkMode ? "bg-gray-700" : "bg-gray-200"
-            }`}
-          >
+        <Animated.View style={{ opacity: fadeAnims[4] }}>
+          <StyledView className="mb-4">
             <StyledText
-              className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+              className={`mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}
             >
-              Add Step
+              Steps
             </StyledText>
-          </StyledTouchable>
-        </StyledView>
+            {formData.steps.map((step, index) => (
+              <StyledView key={index} className="flex-row items-center mb-2">
+                <StyledInput
+                  className={`flex-1 px-4 py-2 rounded-lg border border-gray-300 font-josefin ${
+                    isDarkMode
+                      ? "bg-gray-800 text-white"
+                      : "bg-white text-gray-700"
+                  }`}
+                  placeholder={`Step ${index + 1}`}
+                  placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+                  value={step}
+                  onChangeText={(text) => updateField("steps", index, text)}
+                  multiline
+                />
+                {index > 0 && (
+                  <StyledTouchable
+                    onPress={() => {
+                      const newSteps = formData.steps.filter(
+                        (_, i) => i !== index
+                      );
+                      setFormData({ ...formData, steps: newSteps });
+                    }}
+                    className="ml-2 p-2"
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                  </StyledTouchable>
+                )}
+              </StyledView>
+            ))}
+            <StyledTouchable
+              onPress={() => addField("steps")}
+              className={`py-2 rounded-lg items-center mt-2 ${
+                isDarkMode ? "bg-gray-700" : "bg-gray-200"
+              }`}
+            >
+              <StyledText
+                className={isDarkMode ? "text-gray-300" : "text-gray-700"}
+              >
+                Add Step
+              </StyledText>
+            </StyledTouchable>
+          </StyledView>
+        </Animated.View>
 
         <StyledTouchable
           onPress={handleSubmit}

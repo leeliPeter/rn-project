@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   SafeAreaView,
+  Animated,
 } from "react-native";
 import { styled } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,8 @@ const SettingsScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const isDarkMode = useSelector((state) => state.theme.isDarkMode);
   const showAlerts = useSelector((state) => state.theme.showAlerts);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const renderSettingItem = (
     icon,
@@ -65,15 +68,29 @@ const SettingsScreen = ({ navigation }) => {
           </StyledView>
         </StyledView>
         {type === "switch" && (
-          <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{
-              false: isDarkMode ? "#374151" : "#D1D5DB",
-              true: "#3B82F6",
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  rotate: rotateAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0deg", "180deg"],
+                  }),
+                },
+                { scale: scaleAnim },
+              ],
             }}
-            thumbColor={value ? "#FFFFFF" : "#FFFFFF"}
-          />
+          >
+            <Switch
+              value={value}
+              onValueChange={onValueChange}
+              trackColor={{
+                false: isDarkMode ? "#374151" : "#D1D5DB",
+                true: "#3B82F6",
+              }}
+              thumbColor={value ? "#FFFFFF" : "#FFFFFF"}
+            />
+          </Animated.View>
         )}
       </StyledView>
     );
@@ -98,6 +115,32 @@ const SettingsScreen = ({ navigation }) => {
         },
       ]
     );
+  };
+
+  const handleToggle = (toggle) => {
+    // Parallel animation when toggling settings
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      rotateAnim.setValue(0);
+      toggle();
+    });
   };
 
   return (
